@@ -3,20 +3,31 @@ package main
 import (
 	"fmt"
 	"io"
-	"os"
+	"log"
+	"net"
 	"strings"
 )
 
 func main() {
-	file, err := os.Open("messages.txt")
+	listener, err := net.Listen("tcp", ":42069")
 	if err != nil {
-		return
+		log.Fatal("Could not set up listener:", err)
 	}
-	defer file.Close()
+	defer listener.Close()
 
-	linesCh := getLinesChannel(file)
-	for line := range linesCh {
-		fmt.Println("read: " + line)
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Connection failed")
+			continue
+		}
+		fmt.Println("Connection established")
+
+		linesCh := getLinesChannel(conn)
+		for line := range linesCh {
+			fmt.Println(line)
+		}
+		fmt.Println("Connection closed")
 	}
 }
 
