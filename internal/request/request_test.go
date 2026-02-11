@@ -9,6 +9,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type chunkReader struct {
+	data            string
+	numBytesPerRead int
+	pos             int
+}
+
+// Read reads up to len(p) or numBytesPerRead bytes from the string per call
+// its useful for simulating reading a variable number of bytes per chunk from a network connection
+func (cr *chunkReader) Read(p []byte) (n int, err error) {
+	if cr.pos >= len(cr.data) {
+		return 0, io.EOF
+	}
+	endIndex := cr.pos + cr.numBytesPerRead
+	if endIndex > len(cr.data) {
+		endIndex = len(cr.data)
+	}
+	n = copy(p, cr.data[cr.pos:endIndex])
+	cr.pos += n
+
+	return n, nil
+}
+
 func TestRequestLineParse(t *testing.T) {
 	// Test: Good GET Request line
 	reader := &chunkReader{
@@ -79,28 +101,50 @@ func TestRequestLineParse(t *testing.T) {
 	require.Error(t, err)
 }
 
-type chunkReader struct {
-	data            string
-	numBytesPerRead int
-	pos             int
-}
-
-// Read reads up to len(p) or numBytesPerRead bytes from the string per call
-// its useful for simulating reading a variable number of bytes per chunk from a network connection
-func (cr *chunkReader) Read(p []byte) (n int, err error) {
-	if cr.pos >= len(cr.data) {
-		return 0, io.EOF
+func TestHeadersParse(t *testing.T) {
+	// Test: Standard headers
+	reader := &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
+		numBytesPerRead: 3,
 	}
-	endIndex := cr.pos + cr.numBytesPerRead
-	if endIndex > len(cr.data) {
-		endIndex = len(cr.data)
+	r, err := RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "localhost:42069", r.Headers["host"])
+	assert.Equal(t, "curl/7.81.0", r.Headers["user-agent"])
+	assert.Equal(t, "*/*", r.Headers["accept"])
+
+	// Test: Duplicate headers
+	reader = &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nHost: localhost:8080\r\n\r\n",
+		numBytesPerRead: 3,
 	}
-	n = copy(p, cr.data[cr.pos:endIndex])
-	cr.pos += n
+	r, err = RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "localhost:42069, localhost:8080", r.Headers["host"])
 
-	return n, nil
-}
+	// Test: Malformed header
+	reader = &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost localhost:42069\r\n\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err = RequestFromReader(reader)
+	require.Error(t, err)
 
-func TestChunkReader(t *testing.T) {
+	// Test: Missing end of headers
+	reader = &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err = RequestFromReader(reader)
+	require.Error(t, err)
 
+	// Test: Empty headers
+	reader = &chunkReader{
+		data:            "GET / HTTP/1.1\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err = RequestFromReader(reader)
+	require.Error(t, err)
 }
