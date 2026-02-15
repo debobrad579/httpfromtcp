@@ -1,8 +1,6 @@
 package server
 
 import (
-	"bytes"
-	"io"
 	"log"
 	"net"
 	"strconv"
@@ -12,20 +10,7 @@ import (
 	"github.com/debobrad579/httpfromtcp/internal/response"
 )
 
-type HandlerError struct {
-	StatusCode response.StatusCode
-	Message    string
-}
-
-func (hErr *HandlerError) Write(w io.Writer) {
-	body := []byte(hErr.Message)
-
-	response.WriteStatusLine(w, hErr.StatusCode)
-	response.WriteHeaders(w, response.GetDefaultHeaders(len([]byte(hErr.Message))))
-	w.Write(body)
-}
-
-type Handler func(w io.Writer, req *request.Request) *HandlerError
+type Handler func(w *response.Writer, req *request.Request)
 
 type Server struct {
 	Port     int
@@ -63,15 +48,8 @@ func (s *Server) handle(conn net.Conn) {
 		return
 	}
 
-	buf := &bytes.Buffer{}
-	if hErr := s.handler(buf, req); hErr != nil {
-		hErr.Write(conn)
-		return
-	}
-
-	response.WriteStatusLine(conn, 200)
-	response.WriteHeaders(conn, response.GetDefaultHeaders(buf.Len()))
-	conn.Write(buf.Bytes())
+	resWriter := &response.Writer{Conn: conn}
+	s.handler(resWriter, req)
 }
 
 func Serve(port int, handler Handler) (*Server, error) {

@@ -13,6 +13,10 @@ func (h Headers) Get(fieldName string) string {
 	return h[strings.ToLower(fieldName)]
 }
 
+func (h Headers) Set(fieldName string, fieldValue string) {
+	h[strings.ToLower(fieldName)] = fieldValue
+}
+
 func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	i := bytes.Index(data, []byte("\r\n"))
 	if i == -1 {

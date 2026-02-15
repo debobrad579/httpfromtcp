@@ -2,7 +2,7 @@ package response
 
 import (
 	"fmt"
-	"io"
+	"net"
 	"strconv"
 
 	"github.com/debobrad579/httpfromtcp/internal/headers"
@@ -16,7 +16,15 @@ const (
 	StatusInternalServerError StatusCode = 500
 )
 
-func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
+type Writer struct {
+	Conn net.Conn
+}
+
+func (w *Writer) Write(p []byte) (int, error) {
+	return w.Conn.Write(p)
+}
+
+func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	var reasonPhrase string
 
 	switch statusCode {
@@ -34,16 +42,7 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
 	return err
 }
 
-func GetDefaultHeaders(contentLen int) headers.Headers {
-	h := make(headers.Headers)
-	h["Content-Length"] = strconv.Itoa(contentLen)
-	h["Connection"] = "close"
-	h["Content-Type"] = "text/plain"
-
-	return h
-}
-
-func WriteHeaders(w io.Writer, headers headers.Headers) error {
+func (w *Writer) WriteHeaders(headers headers.Headers) error {
 	for fieldName, fieldValue := range headers {
 		_, err := fmt.Fprintf(w, "%s: %s\r\n", fieldName, fieldValue)
 		if err != nil {
@@ -53,4 +52,17 @@ func WriteHeaders(w io.Writer, headers headers.Headers) error {
 
 	_, err := fmt.Fprint(w, "\r\n")
 	return err
+}
+
+func (w *Writer) WriteBody(p []byte) (int, error) {
+	return w.Write(p)
+}
+
+func GetDefaultHeaders(contentLen int) headers.Headers {
+	headers := make(headers.Headers)
+	headers.Set("Content-Length", strconv.Itoa(contentLen))
+	headers.Set("Connection", "close")
+	headers.Set("Content-Type", "text/plain")
+
+	return headers
 }
