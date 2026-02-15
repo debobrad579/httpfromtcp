@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/debobrad579/httpfromtcp/internal/request"
+	"github.com/debobrad579/httpfromtcp/internal/response"
 )
 
 type Server struct {
@@ -43,7 +44,9 @@ func (s *Server) handle(conn net.Conn) {
 		log.Println(err)
 		return
 	}
-	conn.Write([]byte("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nHello World!"))
+
+	response.WriteStatusLine(conn, 200)
+	response.WriteHeaders(conn, response.GetDefaultHeaders(0))
 }
 
 func Serve(port int) (*Server, error) {
