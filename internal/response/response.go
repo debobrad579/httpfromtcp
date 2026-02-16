@@ -13,33 +13,49 @@ type StatusCode int
 const (
 	StatusOK                  StatusCode = 200
 	StatusBadRequest          StatusCode = 400
+	StatusNotFound            StatusCode = 404
 	StatusInternalServerError StatusCode = 500
 )
 
+var reasonPhrases = map[StatusCode]string{
+	StatusOK:                  "OK",
+	StatusBadRequest:          "Bad Request",
+	StatusNotFound:            "Not Found",
+	StatusInternalServerError: "Internal Server Error",
+}
+
 type Writer struct {
-	Conn net.Conn
+	conn net.Conn
+}
+
+func NewWriter(conn net.Conn) *Writer {
+	return &Writer{conn}
 }
 
 func (w *Writer) Write(p []byte) (int, error) {
-	return w.Conn.Write(p)
+	return w.conn.Write(p)
 }
 
 func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
-	var reasonPhrase string
-
-	switch statusCode {
-	case StatusOK:
-		reasonPhrase = "OK"
-	case StatusBadRequest:
-		reasonPhrase = "Bad Request"
-	case StatusInternalServerError:
-		reasonPhrase = "Internal Server Error"
-	default:
+	reasonPhrase, ok := reasonPhrases[statusCode]
+	if !ok {
 		reasonPhrase = "Unknown"
 	}
 
-	_, err := fmt.Fprintf(w, "HTTP/1.1 %d %s\r\n", statusCode, reasonPhrase)
-	return err
+	if _, err := fmt.Fprintf(w, "HTTP/1.1 %d %s\r\n", statusCode, reasonPhrase); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetDefaultHeaders(contentLen int) headers.Headers {
+	headers := make(headers.Headers)
+	headers.Set("Content-Length", strconv.Itoa(contentLen))
+	headers.Set("Connection", "close")
+	headers.Set("Content-Type", "text/plain")
+
+	return headers
 }
 
 func (w *Writer) WriteHeaders(headers headers.Headers) error {
@@ -58,11 +74,10 @@ func (w *Writer) WriteBody(p []byte) (int, error) {
 	return w.Write(p)
 }
 
-func GetDefaultHeaders(contentLen int) headers.Headers {
-	headers := make(headers.Headers)
-	headers.Set("Content-Length", strconv.Itoa(contentLen))
-	headers.Set("Connection", "close")
-	headers.Set("Content-Type", "text/plain")
+func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+	return fmt.Fprintf(w, "%x\r\n%s\r\n", len(p), p)
+}
 
-	return headers
+func (w *Writer) WriteChunkedBodyDone() (int, error) {
+	return fmt.Fprint(w, "0\r\n\r\n")
 }

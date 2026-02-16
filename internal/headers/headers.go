@@ -17,6 +17,10 @@ func (h Headers) Set(fieldName string, fieldValue string) {
 	h[strings.ToLower(fieldName)] = fieldValue
 }
 
+func (h Headers) Del(fieldName string) {
+	delete(h, strings.ToLower(fieldName))
+}
+
 func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	i := bytes.Index(data, []byte("\r\n"))
 	if i == -1 {

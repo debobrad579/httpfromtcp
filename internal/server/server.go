@@ -48,7 +48,7 @@ func (s *Server) handle(conn net.Conn) {
 		return
 	}
 
-	resWriter := &response.Writer{Conn: conn}
+	resWriter := response.NewWriter(conn)
 	s.handler(resWriter, req)
 }
 
