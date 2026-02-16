@@ -1,12 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -55,12 +57,14 @@ func httpBinProxyHandler(w *response.Writer, req *request.Request) {
 	defer res.Body.Close()
 
 	w.WriteStatusLine(response.StatusOK)
-	headers := make(headers.Headers)
-	headers.Set("Content-Type", "application/json")
-	headers.Set("Connection", "close")
-	headers.Set("Transfer-Encoding", "chunked")
-	w.WriteHeaders(headers)
+	h := make(headers.Headers)
+	h.Set("Content-Type", "application/json")
+	h.Set("Connection", "close")
+	h.Set("Transfer-Encoding", "chunked")
+	h.Set("Trailers", "X-Content-SHA256, X-Content-Length")
+	w.WriteHeaders(h)
 
+	var fullBody []byte
 	buf := make([]byte, 1024)
 
 	for {
@@ -73,11 +77,18 @@ func httpBinProxyHandler(w *response.Writer, req *request.Request) {
 			return
 		}
 
-		fmt.Println("Read bytes:", n)
+		fullBody = append(fullBody, buf[:n]...)
 		w.WriteChunkedBody(buf[:n])
 	}
 
-	w.WriteChunkedBodyDone()
+	hash := sha256.Sum256(fullBody)
+	hashString := hex.EncodeToString(hash[:])
+
+	trailers := make(headers.Headers)
+	trailers.Set("X-Content-SHA256", hashString)
+	trailers.Set("X-Content-Length", strconv.Itoa(len(fullBody)))
+
+	w.WriteChunkedBodyDone(trailers)
 }
 
 func writeHTMLResponse(w *response.Writer, html string, statusCode response.StatusCode) {

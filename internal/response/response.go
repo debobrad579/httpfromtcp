@@ -58,8 +58,8 @@ func GetDefaultHeaders(contentLen int) headers.Headers {
 	return headers
 }
 
-func (w *Writer) WriteHeaders(headers headers.Headers) error {
-	for fieldName, fieldValue := range headers {
+func (w *Writer) WriteHeaders(h headers.Headers) error {
+	for fieldName, fieldValue := range h {
 		_, err := fmt.Fprintf(w, "%s: %s\r\n", fieldName, fieldValue)
 		if err != nil {
 			return err
@@ -78,6 +78,17 @@ func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
 	return fmt.Fprintf(w, "%x\r\n%s\r\n", len(p), p)
 }
 
-func (w *Writer) WriteChunkedBodyDone() (int, error) {
-	return fmt.Fprint(w, "0\r\n\r\n")
+func (w *Writer) WriteChunkedBodyDone(trailers headers.Headers) error {
+	if _, err := fmt.Fprint(w, "0\r\n"); err != nil {
+		return err
+	}
+
+	for fieldName, fieldValue := range trailers {
+		if _, err := fmt.Fprintf(w, "%s: %s\r\n", fieldName, fieldValue); err != nil {
+			return err
+		}
+	}
+
+	_, err := fmt.Fprint(w, "\r\n")
+	return err
 }
