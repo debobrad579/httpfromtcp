@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <link href="/static/css/styles.css" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
+  <script src="/static/js/script.js" defer></script>
+</head>
+
+<body>
+  <div class="calculator-grid">
+    <div class="output">
+      <div data-previous-operand class="previous-operand"></div>
+      <div data-current-operand class="current-operand">0</div>
+    </div>
+    <!-- Row 1 -->
+    <button data-all-clear class="span-2">AC</button>
+    <button data-delete>DEL</button>
+    <button data-deg class="span-2">RAD</button>
+    <!-- Row 2 -->
+    <button data-button>sin</button>
+    <button data-button>cos</button>
+    <button data-button>tan</button>
+    <button data-arc>arc</button>
+    <button data-hyp>hyp</button>
+    <!-- Row 3 -->
+    <button data-button>log</button>
+    <button data-button>ln</button>
+    <button data-button>exp</button>
+    <button data-button>(</button>
+    <button data-button>)</button>
+    <!-- Row 3 -->
+    <button data-button>7</button>
+    <button data-button>8</button>
+    <button data-button>9</button>
+    <button data-button>^</button>
+    <button data-button>√</button>
+    <!-- Row 4 -->
+    <button data-button>4</button>
+    <button data-button>5</button>
+    <button data-button>6</button>
+    <button data-button>×</button>
+    <button data-button>÷</button>
+    <!-- Row 5 -->
+    <button data-button>1</button>
+    <button data-button>2</button>
+    <button data-button>3</button>
+    <button data-button>+</button>
+    <button data-button>-</button>
+    <!-- Row 6 -->
+    <button data-button>.</button>
+    <button data-button>0</button>
+    <button data-button>π</button>
+    <button data-equals class="span-2">=</button>
+  </div>
+</body>
+
+</html>
