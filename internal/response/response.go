@@ -14,6 +14,7 @@ const (
 	StatusOK                  StatusCode = 200
 	StatusBadRequest          StatusCode = 400
 	StatusNotFound            StatusCode = 404
+	StatusMethodNotAllowed    StatusCode = 405
 	StatusInternalServerError StatusCode = 500
 )
 
@@ -21,6 +22,7 @@ var reasonPhrases = map[StatusCode]string{
 	StatusOK:                  "OK",
 	StatusBadRequest:          "Bad Request",
 	StatusNotFound:            "Not Found",
+	StatusMethodNotAllowed:    "Method Not Allowed",
 	StatusInternalServerError: "Internal Server Error",
 }
 

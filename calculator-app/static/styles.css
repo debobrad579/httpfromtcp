@@ -45,13 +45,18 @@ body {
 
 .output .previous-operand {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 1.2rem;
+  font-size: 1.5rem;
 }
 
 .output .current-operand {
   color: #ffffff;
-  font-size: 2.8rem;
+  font-size: 3rem;
   font-weight: 500;
+}
+
+.output .error {
+  color: #bb0000;
+  font-size: 1.5rem;
 }
 
 .calculator-grid button {

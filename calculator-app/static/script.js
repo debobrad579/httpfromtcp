@@ -6,9 +6,13 @@ FUNCTIONS = [
 ];
 
 class Calculator {
-  constructor(previousOperandOutput, currentOperandOutput) {
+  constructor({ previousOperandOutput, currentOperandOutput, errorOutput, degButton, arcButton, hypButton }) {
     this.previousOperandOutput = previousOperandOutput;
     this.currentOperandOutput = currentOperandOutput;
+    this.errorOutput = errorOutput;
+    this.degButton = degButton;
+    this.arcButton = arcButton;
+    this.hypButton = hypButton;
     this.clear();
     this.setDeg(false)
   }
@@ -17,14 +21,13 @@ class Calculator {
     this.currentOperand = '';
     this.previousOperand = '';
     this.justComputed = false;
-    this.justErrored = false;
     this.setArc(false)
     this.setHyp(false)
     this.updateDisplay();
   }
 
   delete() {
-    if (this.justErrored || this.justComputed) {this.clear(); return}
+    if (this.justComputed) {this.clear(); return}
 
     for (let i = 0; i < FUNCTIONS.length; i++) {
       if (this.currentOperand.endsWith(FUNCTIONS[i] + '(')) {
@@ -42,8 +45,7 @@ class Calculator {
     if (string === '.' && this.currentOperand.slice(this.getLastOperationIndex()).includes('.')) {return}
 
     if (this.justComputed) {
-      if (!this.justErrored) {this.previousOperand = this.currentOperand}
-      else {this.previousOperand = ''; this.justErrored = false}
+      this.previousOperand = this.currentOperand
       if (!OPERATIONS.includes(string)) {this.currentOperand = ''}
       this.justComputed = false;
     }
@@ -63,8 +65,7 @@ class Calculator {
 
   compute() {
     this.appendMultiplication();
-    this.previousOperand = this.currentOperandOutput.innerText;
-    this.justComputed = true;
+    const previousOperand = this.currentOperandOutput.innerText
 
     fetch('/api', {
       method: 'POST',
@@ -77,16 +78,24 @@ class Calculator {
         .replaceAll('÷', '/')
         .replaceAll('π', 'pi')
         .replaceAll('√', 'sqrt')
-        .replaceAll('log', 'log10')
-        .replaceAll('ln', 'log'),
+        .replaceAll('log(', 'log10(')
+        .replaceAll('ln(', 'log('),
         is_degree_mode: this.degreeMode,
       })
     })
-    .then(response => response.json())
+    .then(res => {
+      if (!res.ok) {
+        this.errorOutput.innerText = res.statusText;
+        return
+      }
+
+      return res.json();
+    })
     .then(data => {
-      if (data.is_error) {this.justErrored = true}
-      else {this.previousOperand += ' ='}
-      this.currentOperand = data.equation;
+      if (data == null) return;
+      this.previousOperand = previousOperand + ' =';
+      this.justComputed = true;
+      this.currentOperand = data.evaluated_value;
       this.updateDisplay();
     });
   }
@@ -95,18 +104,8 @@ class Calculator {
     this.setArc(false)
     this.setHyp(false)
     this.previousOperandOutput.innerText = this.previousOperand;
-
-    if (this.currentOperand === '') {this.currentOperandOutput.innerText = '0'; return}
-
-    if (this.justErrored) {
-      this.currentOperandOutput.style.wordWrap = 'normal';
-      this.currentOperandOutput.style.wordBreak = 'normal';
-    } else {
-      this.currentOperandOutput.style.wordWrap = 'break-word';
-      this.currentOperandOutput.style.wordBreak = 'break-all';
-    }
-
-    this.currentOperandOutput.innerText = this.currentOperand;
+    this.currentOperandOutput.innerText = this.currentOperand === '' ? '0' : this.currentOperand;
+    this.errorOutput.innerText = '';
   }
 
   tokenize(expression) {
@@ -156,29 +155,29 @@ class Calculator {
   }
 
   setArc(bool) {
-    this.arc = bool
+    this.arc = bool;
     if (bool) {
-      arcButton.classList = 'active'
+      arcButton.classList = 'active';
     } else {
-      arcButton.classList = ''
+      arcButton.classList = '';
     }
   }
 
   setHyp(bool) {
-    this.hyperbolic = bool
+    this.hyperbolic = bool;
     if (bool) {
-      hypButton.classList = 'active'
+      hypButton.classList = 'active';
     } else {
-      hypButton.classList = ''
+      hypButton.classList = '';
     }
   }
 
   setDeg(bool) {
-    this.degreeMode = bool
+    this.degreeMode = bool;
     if (bool) {
-      degButton.innerHTML = "DEG"
+      degButton.innerText = "DEG";
     } else {
-      degButton.innerHTML = "RAD"
+      degButton.innerText = "RAD";
     }
   }
 }
@@ -192,8 +191,9 @@ const deleteButton = document.querySelector('[data-delete]');
 const allClearButton = document.querySelector('[data-all-clear]');
 const previousOperandOutput = document.querySelector('[data-previous-operand]');
 const currentOperandOutput = document.querySelector('[data-current-operand]');
+const errorOutput = document.querySelector('[data-error]');
 
-const calculator = new Calculator(previousOperandOutput, currentOperandOutput);
+const calculator = new Calculator({ previousOperandOutput, currentOperandOutput, errorOutput, degButton, arcButton, hypButton });
 
 for (let i = 0; i < standardButtons.length; i++) {
   const button = standardButtons[i];
