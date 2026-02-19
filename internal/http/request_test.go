@@ -1,10 +1,10 @@
-package request_test
+package http_test
 
 import (
 	"io"
 	"testing"
 
-	"github.com/debobrad579/httpfromtcp/internal/request"
+	"github.com/debobrad579/httpfromtcp/internal/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +33,7 @@ func TestHeadersParse(t *testing.T) {
 		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err := request.RequestFromReader(reader)
+	r, err := http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "localhost:42069", r.Headers.Get("host"))
@@ -45,7 +45,7 @@ func TestHeadersParse(t *testing.T) {
 		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nHost: localhost:8080\r\n\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "localhost:42069, localhost:8080", r.Headers.Get("host"))
@@ -55,7 +55,7 @@ func TestHeadersParse(t *testing.T) {
 		data:            "GET / HTTP/1.1\r\nHost localhost:42069\r\n\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 
 	// Test: Missing end of headers
@@ -63,7 +63,7 @@ func TestHeadersParse(t *testing.T) {
 		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 
 	// Test: Empty headers
@@ -71,7 +71,7 @@ func TestHeadersParse(t *testing.T) {
 		data:            "GET / HTTP/1.1\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 }
 
@@ -85,7 +85,7 @@ func TestBodyParse(t *testing.T) {
 			"hello world!\n",
 		numBytesPerRead: 3,
 	}
-	r, err := request.RequestFromReader(reader)
+	r, err := http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "hello world!\n", string(r.Body))
@@ -99,7 +99,7 @@ func TestBodyParse(t *testing.T) {
 			"partial content",
 		numBytesPerRead: 3,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 
 	// Test: Empty body, 0 reported content length
@@ -110,7 +110,7 @@ func TestBodyParse(t *testing.T) {
 			"\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "", string(r.Body))
@@ -122,7 +122,7 @@ func TestBodyParse(t *testing.T) {
 			"\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "", string(r.Body))
@@ -135,7 +135,7 @@ func TestBodyParse(t *testing.T) {
 			"hello world!",
 		numBytesPerRead: 3,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "", string(r.Body))

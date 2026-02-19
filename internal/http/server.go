@@ -1,16 +1,13 @@
-package server
+package http
 
 import (
 	"fmt"
 	"log"
 	"net"
 	"sync/atomic"
-
-	"github.com/debobrad579/httpfromtcp/internal/request"
-	"github.com/debobrad579/httpfromtcp/internal/response"
 )
 
-type Handler func(w *response.Writer, req *request.Request)
+type Handler func(w *ResponseWriter, req *Request)
 
 type Server struct {
 	Port     uint16
@@ -48,17 +45,17 @@ func (s *Server) handle(conn net.Conn) {
 		}
 	}()
 
-	req, err := request.RequestFromReader(conn)
+	req, err := RequestFromReader(conn)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	resWriter := response.NewWriter(conn)
+	resWriter := NewResponseWriter(conn)
 	s.handler(resWriter, req)
 }
 
-func Serve(port uint16, handler Handler) (*Server, error) {
+func ListenAndServe(port uint16, handler Handler) (*Server, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err

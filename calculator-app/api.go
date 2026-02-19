@@ -6,8 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Pramod-Devireddy/go-exprtk"
-	"github.com/debobrad579/httpfromtcp/internal/request"
-	"github.com/debobrad579/httpfromtcp/internal/response"
+	"github.com/debobrad579/httpfromtcp/internal/http"
 )
 
 type apiResponseBody struct {
@@ -19,15 +18,15 @@ type apiRequestBody struct {
 	IsDegreeMode bool   `json:"is_degree_mode"`
 }
 
-func apiHandler(w *response.Writer, req *request.Request) {
+func apiHandler(w *http.ResponseWriter, req *http.Request) {
 	if req.RequestLine.Method != "POST" {
-		w.WriteStatusLine(response.StatusMethodNotAllowed)
+		w.WriteStatusLine(http.StatusMethodNotAllowed)
 		return
 	}
 
 	var reqBody apiRequestBody
 	if err := json.Unmarshal(req.Body, &reqBody); err != nil {
-		w.WriteStatusLine(response.StatusBadRequest)
+		w.WriteStatusLine(http.StatusBadRequest)
 		return
 	}
 
@@ -43,22 +42,27 @@ func apiHandler(w *response.Writer, req *request.Request) {
 	expr := exprtk.NewExprtk()
 	expr.SetExpression(reqBody.Equation)
 	if err := expr.CompileExpression(); err != nil {
-		w.WriteStatusLine(response.StatusBadRequest)
+		w.WriteStatusLine(http.StatusBadRequest)
 		return
 	}
 
+	evaluatedValue := expr.GetEvaluatedValue()
+	if evaluatedValue < 0.00000001 && evaluatedValue > -0.00000001 {
+		evaluatedValue = 0.0
+	}
+
 	resBody := apiResponseBody{
-		EvaluatedValue: strconv.FormatFloat(expr.GetEvaluatedValue(), 'g', 9, 64),
+		EvaluatedValue: strconv.FormatFloat(evaluatedValue, 'g', 9, 64),
 	}
 
 	resData, err := json.Marshal(resBody)
 	if err != nil {
-		w.WriteStatusLine(response.StatusInternalServerError)
+		w.WriteStatusLine(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteStatusLine(response.StatusOK)
-	h := response.GetDefaultHeaders("application/json", len(resData))
+	w.WriteStatusLine(http.StatusOK)
+	h := http.GetDefaultResponseHeaders("application/json", len(resData))
 	w.WriteHeaders(h)
 	w.WriteBody(resData)
 }

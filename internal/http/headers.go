@@ -1,35 +1,44 @@
-package headers
+package http
 
 import (
 	"bytes"
 	"errors"
+	"strconv"
 	"strings"
 )
 
 type Headers struct {
-	h map[string]string
+	headers map[string]string
 }
 
-func New() *Headers {
-	headers := Headers{}
-	headers.h = make(map[string]string)
-	return &headers
+func NewHeaders() *Headers {
+	h := Headers{}
+	h.headers = make(map[string]string)
+	return &h
+}
+
+func GetDefaultResponseHeaders(mimetype string, contentLen int) *Headers {
+	h := NewHeaders()
+	h.Set("Connection", "close")
+	h.Set("Content-Type", mimetype)
+	h.Set("Content-Length", strconv.Itoa(contentLen))
+	return h
 }
 
 func (h *Headers) Get(key string) string {
-	return h.h[strings.ToLower(key)]
+	return h.headers[strings.ToLower(key)]
 }
 
 func (h *Headers) Set(key, value string) {
-	h.h[strings.ToLower(key)] = value
+	h.headers[strings.ToLower(key)] = value
 }
 
 func (h *Headers) Del(key string) {
-	delete(h.h, strings.ToLower(key))
+	delete(h.headers, strings.ToLower(key))
 }
 
 func (h *Headers) Range(callback func(key, value string) bool) {
-	for k, v := range h.h {
+	for k, v := range h.headers {
 		if !callback(k, v) {
 			return
 		}

@@ -4,11 +4,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/debobrad579/httpfromtcp/internal/request"
-	"github.com/debobrad579/httpfromtcp/internal/response"
+	"github.com/debobrad579/httpfromtcp/internal/http"
 )
 
-func routeHandler(w *response.Writer, req *request.Request) {
+func routeHandler(w *http.ResponseWriter, req *http.Request) {
 	log.Printf("%s %s %s", req.RequestLine.Method, req.RequestLine.RequestTarget, req.Body)
 
 	if req.RequestLine.RequestTarget == "/" {
@@ -26,5 +25,5 @@ func routeHandler(w *response.Writer, req *request.Request) {
 		return
 	}
 
-	w.WriteStatusLine(response.StatusNotFound)
+	w.WriteStatusLine(http.StatusNotFound)
 }

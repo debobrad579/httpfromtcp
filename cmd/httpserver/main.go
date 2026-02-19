@@ -6,15 +6,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/debobrad579/httpfromtcp/internal/request"
-	"github.com/debobrad579/httpfromtcp/internal/response"
-	"github.com/debobrad579/httpfromtcp/internal/server"
+	"github.com/debobrad579/httpfromtcp/internal/http"
 )
 
 const port = 42069
 
 func main() {
-	server, err := server.Serve(port, handler)
+	server, err := http.ListenAndServe(port, handler)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
@@ -27,7 +25,7 @@ func main() {
 	log.Println("Server gracefully stopped")
 }
 
-func handler(w *response.Writer, req *request.Request) {
+func handler(w *http.ResponseWriter, req *http.Request) {
 	log.Printf("%s %s", req.RequestLine.Method, req.RequestLine.RequestTarget)
 
 	var html string
@@ -44,7 +42,7 @@ func handler(w *response.Writer, req *request.Request) {
   </body>
 </html>`
 
-		w.WriteStatusLine(response.StatusBadRequest)
+		w.WriteStatusLine(http.StatusBadRequest)
 	case "/myproblem":
 		html = `<html>
   <head>
@@ -56,7 +54,7 @@ func handler(w *response.Writer, req *request.Request) {
   </body>
 </html>`
 
-		w.WriteStatusLine(response.StatusInternalServerError)
+		w.WriteStatusLine(http.StatusInternalServerError)
 	default:
 		html = `<html>
   <head>
@@ -68,10 +66,10 @@ func handler(w *response.Writer, req *request.Request) {
   </body>
 </html>`
 
-		w.WriteStatusLine(response.StatusOK)
+		w.WriteStatusLine(http.StatusOK)
 	}
 
-	headers := response.GetDefaultHeaders("text/html", len(html))
+	headers := http.GetDefaultResponseHeaders("text/html", len(html))
 	w.WriteHeaders(headers)
 	w.WriteBody([]byte(html))
 }

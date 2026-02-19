@@ -109,7 +109,7 @@ class Calculator {
   }
 
   tokenize(expression) {
-    const regex = /asinh|acosh|atanh|asin|acos|atan|sinh|cosh|tanh|sin|cos|tan|log|ln|√|exp|π|\d+\.\d+|\d+|[()+\-*/^×÷]/g;
+    const regex = /asinh|acosh|atanh|asin|acos|atan|sinh|cosh|tanh|sin|cos|tan|log|ln|√|exp|e|π|\d+\.\d+|\d+|[()+\-*/^×÷]/g;
     return expression.match(regex) || [];
   }
 
@@ -118,7 +118,7 @@ class Calculator {
     const tokens = this.tokenize(input);
     const result = [];
 
-    const isNumber = (t) => /^[0-9]+(\.[0-9]+)?$/.test(t) || t === 'π';
+    const isNumber = (t) => /^([0-9]+(\.[0-9]+)?|π)$/.test(t);
 
     for (let i = 0; i < tokens.length; i++) {
       const current = tokens[i];

@@ -1,11 +1,9 @@
-package request
+package http
 
 import (
 	"errors"
 	"io"
 	"strconv"
-
-	"github.com/debobrad579/httpfromtcp/internal/headers"
 )
 
 const bufferSize = 1024
@@ -22,7 +20,7 @@ const (
 
 type Request struct {
 	RequestLine RequestLine
-	Headers     headers.Headers
+	Headers     Headers
 	Body        []byte
 	state       requestState
 }
@@ -32,7 +30,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	readToIndex := 0
 
 	request := &Request{state: requestInitialized}
-	request.Headers = *headers.New()
+	request.Headers = *NewHeaders()
 
 	for request.state != requestDone {
 		if readToIndex >= len(buf) {

@@ -5,22 +5,22 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/debobrad579/httpfromtcp/internal/response"
+	"github.com/debobrad579/httpfromtcp/internal/http"
 )
 
-func writeFileResponse(w *response.Writer, path string) {
+func writeFileResponse(w *http.ResponseWriter, path string) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			w.WriteStatusLine(response.StatusNotFound)
+			w.WriteStatusLine(http.StatusNotFound)
 		} else {
-			w.WriteStatusLine(response.StatusInternalServerError)
+			w.WriteStatusLine(http.StatusInternalServerError)
 		}
 		return
 	}
 
 	w.WriteStatusLine(200)
-	headers := response.GetDefaultHeaders(mime.TypeByExtension(filepath.Ext(path)), len(data))
+	headers := http.GetDefaultResponseHeaders(mime.TypeByExtension(filepath.Ext(path)), len(data))
 	w.WriteHeaders(headers)
 	w.WriteBody(data)
 }

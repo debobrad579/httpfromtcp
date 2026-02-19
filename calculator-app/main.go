@@ -6,13 +6,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/debobrad579/httpfromtcp/internal/server"
+	"github.com/debobrad579/httpfromtcp/internal/http"
 )
 
 const port = 8080
 
 func main() {
-	server, err := server.Serve(port, routeHandler)
+	server, err := http.ListenAndServe(port, routeHandler)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}

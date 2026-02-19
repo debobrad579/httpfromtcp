@@ -1,11 +1,8 @@
-package response
+package http
 
 import (
 	"fmt"
 	"io"
-	"strconv"
-
-	"github.com/debobrad579/httpfromtcp/internal/headers"
 )
 
 type writerState int
@@ -16,19 +13,19 @@ const (
 	writerStateBody
 )
 
-type Writer struct {
+type ResponseWriter struct {
 	writerState writerState
 	writer      io.Writer
 }
 
-func NewWriter(writer io.Writer) *Writer {
-	return &Writer{
+func NewResponseWriter(writer io.Writer) *ResponseWriter {
+	return &ResponseWriter{
 		writerState: writerStateStatusLine,
 		writer:      writer,
 	}
 }
 
-func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
+func (w *ResponseWriter) WriteStatusLine(statusCode StatusCode) error {
 	if w.writerState != writerStateStatusLine {
 		return fmt.Errorf("cannot write status line in state %d", w.writerState)
 	}
@@ -46,7 +43,7 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	return nil
 }
 
-func (w *Writer) WriteHeaders(h *headers.Headers) error {
+func (w *ResponseWriter) WriteHeaders(h *Headers) error {
 	if w.writerState != writerStateHeaders {
 		return fmt.Errorf("cannot write headers in state %d", w.writerState)
 	}
@@ -68,7 +65,7 @@ func (w *Writer) WriteHeaders(h *headers.Headers) error {
 	return err
 }
 
-func (w *Writer) WriteBody(p []byte) (int, error) {
+func (w *ResponseWriter) WriteBody(p []byte) (int, error) {
 	if w.writerState != writerStateBody {
 		return 0, fmt.Errorf("cannot write body in state %d", w.writerState)
 	}
@@ -76,7 +73,7 @@ func (w *Writer) WriteBody(p []byte) (int, error) {
 	return w.writer.Write(p)
 }
 
-func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+func (w *ResponseWriter) WriteChunkedBody(p []byte) (int, error) {
 	if w.writerState != writerStateBody {
 		return 0, fmt.Errorf("cannot write chunked body in state %d", w.writerState)
 	}
@@ -84,7 +81,7 @@ func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
 	return fmt.Fprintf(w.writer, "%x\r\n%s\r\n", len(p), p)
 }
 
-func (w *Writer) WriteTrailers(trailers *headers.Headers) error {
+func (w *ResponseWriter) WriteTrailers(trailers *Headers) error {
 	if w.writerState != writerStateBody {
 		return fmt.Errorf("cannot write trailers in state %d", w.writerState)
 	}
@@ -108,13 +105,4 @@ func (w *Writer) WriteTrailers(trailers *headers.Headers) error {
 
 	_, err := fmt.Fprint(w.writer, "\r\n")
 	return err
-}
-
-func GetDefaultHeaders(mime string, contentLen int) *headers.Headers {
-	headers := headers.New()
-	headers.Set("Connection", "close")
-	headers.Set("Content-Type", mime)
-	headers.Set("Content-Length", strconv.Itoa(contentLen))
-
-	return headers
 }

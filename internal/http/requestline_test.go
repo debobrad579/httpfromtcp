@@ -1,9 +1,9 @@
-package request_test
+package http_test
 
 import (
 	"testing"
 
-	"github.com/debobrad579/httpfromtcp/internal/request"
+	"github.com/debobrad579/httpfromtcp/internal/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +14,7 @@ func TestRequestLineParse(t *testing.T) {
 		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err := request.RequestFromReader(reader)
+	r, err := http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "GET", r.RequestLine.Method)
@@ -26,7 +26,7 @@ func TestRequestLineParse(t *testing.T) {
 		data:            "GET /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 1,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "GET", r.RequestLine.Method)
@@ -38,7 +38,7 @@ func TestRequestLineParse(t *testing.T) {
 		data:            "POST /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/8.6.0\r\nAccept: */*\r\nContent-Type: application/json\r\nContent-Length: 22\r\n\r\n{'flavor':'dark mode'}",
 		numBytesPerRead: 4,
 	}
-	r, err = request.RequestFromReader(reader)
+	r, err = http.RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "POST", r.RequestLine.Method)
@@ -50,7 +50,7 @@ func TestRequestLineParse(t *testing.T) {
 		data:            "/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 3,
 	}
-	_, err = request.RequestFromReader(reader)
+	_, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 
 	// Test: Out of order Request line
@@ -58,7 +58,7 @@ func TestRequestLineParse(t *testing.T) {
 		data:            "/ GET HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 3,
 	}
-	_, err = request.RequestFromReader(reader)
+	_, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 
 	// Test: Invalid method in Request line (non-alphabet character)
@@ -66,7 +66,7 @@ func TestRequestLineParse(t *testing.T) {
 		data:            "G3T / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 2,
 	}
-	_, err = request.RequestFromReader(reader)
+	_, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 
 	// Test: Invalid method in Request line (non-capital character)
@@ -74,7 +74,7 @@ func TestRequestLineParse(t *testing.T) {
 		data:            "get / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 2,
 	}
-	_, err = request.RequestFromReader(reader)
+	_, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 
 	// Test: Invalid version in Request line
@@ -82,6 +82,6 @@ func TestRequestLineParse(t *testing.T) {
 		data:            "GET / HTTP/2\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n",
 		numBytesPerRead: 3,
 	}
-	_, err = request.RequestFromReader(reader)
+	_, err = http.RequestFromReader(reader)
 	require.Error(t, err)
 }

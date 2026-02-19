@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/debobrad579/httpfromtcp/internal/request"
+	"github.com/debobrad579/httpfromtcp/internal/http"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 		}
 		fmt.Println("Connection established")
 
-		req, err := request.RequestFromReader(conn)
+		req, err := http.RequestFromReader(conn)
 		if err != nil {
 			fmt.Println(err)
 			continue
