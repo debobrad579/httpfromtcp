@@ -122,8 +122,9 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 			return 0, nil
 		}
 
-		if len(r.Body)+len(data) > contentLength {
-			return 0, errors.New("body greater than Content-Length")
+		remaining := contentLength - len(r.Body)
+		if len(data) > remaining {
+			data = data[:remaining]
 		}
 
 		r.Body = append(r.Body, data...)

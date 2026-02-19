@@ -19,7 +19,7 @@ func writeFileResponse(w *http.ResponseWriter, path string) {
 		return
 	}
 
-	w.WriteStatusLine(200)
+	w.WriteStatusLine(http.StatusOK)
 	headers := http.GetDefaultResponseHeaders(mime.TypeByExtension(filepath.Ext(path)), len(data))
 	w.WriteHeaders(headers)
 	w.WriteBody(data)
