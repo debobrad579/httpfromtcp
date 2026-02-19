@@ -7,7 +7,7 @@ An implimentation of the HTTP/1.1 protocol written in go, built on raw TCP conne
 ```
 .
 ├── internal/
-│   ├── http/        # HTTP/1.1 protocol implementation
+│   └── http/        # HTTP/1.1 protocol implementation
 ├── calculator-app/  # Scientific calculator web app
 └── cmd/
     ├── httpserver/  # Simple demo HTTP server
