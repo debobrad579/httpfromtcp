@@ -31,9 +31,10 @@ func main() {
 
 		fmt.Printf("Request line:\n- Method: %s\n- Target: %s\n- Version: %s\n", req.RequestLine.Method, req.RequestLine.RequestTarget, req.RequestLine.HttpVersion)
 		fmt.Print("Headers:\n")
-		for fieldName, fieldValue := range req.Headers {
+		req.Headers.Range(func(fieldName, fieldValue string) bool {
 			fmt.Printf("- %s: %s\n", fieldName, fieldValue)
-		}
+			return true
+		})
 		fmt.Printf("Body:\n%s\n", string(req.Body))
 
 		fmt.Println("Connection closed")

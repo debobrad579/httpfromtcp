@@ -9,7 +9,7 @@ import (
 )
 
 func writeFileResponse(w *response.Writer, path string) {
-	html, err := os.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			w.WriteStatusLine(response.StatusNotFound)
@@ -20,8 +20,7 @@ func writeFileResponse(w *response.Writer, path string) {
 	}
 
 	w.WriteStatusLine(200)
-	headers := response.GetDefaultHeaders(len(html))
-	headers.Set("Content-Type", mime.TypeByExtension(filepath.Ext(path)))
+	headers := response.GetDefaultHeaders(mime.TypeByExtension(filepath.Ext(path)), len(data))
 	w.WriteHeaders(headers)
-	w.WriteBody(html)
+	w.WriteBody(data)
 }

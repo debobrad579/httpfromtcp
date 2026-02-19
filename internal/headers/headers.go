@@ -3,54 +3,81 @@ package headers
 import (
 	"bytes"
 	"errors"
-	"regexp"
 	"strings"
 )
 
-type Headers map[string]string
-
-func (h Headers) Get(fieldName string) string {
-	return h[strings.ToLower(fieldName)]
+type Headers struct {
+	h map[string]string
 }
 
-func (h Headers) Set(fieldName string, fieldValue string) {
-	h[strings.ToLower(fieldName)] = fieldValue
+func New() *Headers {
+	headers := Headers{}
+	headers.h = make(map[string]string)
+	return &headers
 }
 
-func (h Headers) Del(fieldName string) {
-	delete(h, strings.ToLower(fieldName))
+func (h *Headers) Get(key string) string {
+	return h.h[strings.ToLower(key)]
 }
 
-func (h Headers) Parse(data []byte) (n int, done bool, err error) {
+func (h *Headers) Set(key, value string) {
+	h.h[strings.ToLower(key)] = value
+}
+
+func (h *Headers) Del(key string) {
+	delete(h.h, strings.ToLower(key))
+}
+
+func (h *Headers) Range(callback func(key, value string) bool) {
+	for k, v := range h.h {
+		if !callback(k, v) {
+			return
+		}
+	}
+}
+
+func (h *Headers) Parse(data []byte) (int, bool, error) {
 	i := bytes.Index(data, []byte("\r\n"))
 	if i == -1 {
 		return 0, false, nil
 	}
 
-	line := data[:i]
+	fieldLine := data[:i]
 
-	if len(line) == 0 {
+	if len(fieldLine) == 0 {
 		return 2, true, nil
 	}
 
-	fieldName, fieldValue, found := strings.Cut(string(line), ":")
+	fieldName, fieldValue, found := strings.Cut(string(fieldLine), ":")
 	if !found || strings.HasSuffix(fieldName, " ") {
-		return 0, false, errors.New("error: invalid header format: " + fieldName)
+		return 0, false, errors.New("invalid header format: " + fieldName)
 	}
 
 	fieldName = strings.ToLower(strings.TrimSpace(fieldName))
-	fieldNamePattern := "^[a-z0-9!#$%&'*+.^_`|~-]+$"
-	matched, err := regexp.MatchString(fieldNamePattern, fieldName)
-	if fieldName == "" || !matched {
-		return 0, false, errors.New("error: invalid header format: " + fieldName)
+	if !isValidFieldName(fieldName) {
+		return 0, false, errors.New("invalid header format: " + fieldName)
 	}
 
 	fieldValue = strings.TrimSpace(fieldValue)
-	prevFieldValue, ok := h[fieldName]
-	if ok {
+	prevFieldValue := h.Get(fieldName)
+	if prevFieldValue != "" {
 		fieldValue = prevFieldValue + ", " + fieldValue
 	}
 
-	h[fieldName] = fieldValue
+	h.Set(fieldName, fieldValue)
 	return i + 2, false, nil
+}
+
+func isValidFieldName(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	for _, c := range s {
+		if !strings.ContainsRune("abcdefghijklmnopqrstuvwxyz0123456789!#$%&'*+.^_`|~-", c) {
+			return false
+		}
+	}
+
+	return true
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"strings"
 
 	"github.com/debobrad579/httpfromtcp/internal/request"
@@ -8,6 +9,8 @@ import (
 )
 
 func routeHandler(w *response.Writer, req *request.Request) {
+	log.Printf("%s %s %s", req.RequestLine.Method, req.RequestLine.RequestTarget, req.Body)
+
 	if req.RequestLine.RequestTarget == "/" {
 		writeFileResponse(w, "calculator-app/templates/index.html")
 		return

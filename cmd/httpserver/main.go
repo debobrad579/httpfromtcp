@@ -28,6 +28,8 @@ func main() {
 }
 
 func handler(w *response.Writer, req *request.Request) {
+	log.Printf("%s %s", req.RequestLine.Method, req.RequestLine.RequestTarget)
+
 	var html string
 
 	switch req.RequestLine.RequestTarget {
@@ -69,8 +71,7 @@ func handler(w *response.Writer, req *request.Request) {
 		w.WriteStatusLine(response.StatusOK)
 	}
 
-	headers := response.GetDefaultHeaders(len(html))
-	headers.Set("Content-Type", "text/html")
+	headers := response.GetDefaultHeaders("text/html", len(html))
 	w.WriteHeaders(headers)
 	w.WriteBody([]byte(html))
 }

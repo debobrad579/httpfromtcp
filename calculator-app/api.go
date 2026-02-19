@@ -58,8 +58,7 @@ func apiHandler(w *response.Writer, req *request.Request) {
 	}
 
 	w.WriteStatusLine(response.StatusOK)
-	h := response.GetDefaultHeaders(len(resData))
-	h.Set("Content-Type", "application/json")
+	h := response.GetDefaultHeaders("application/json", len(resData))
 	w.WriteHeaders(h)
 	w.WriteBody(resData)
 }

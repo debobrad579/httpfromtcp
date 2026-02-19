@@ -2,16 +2,14 @@ package request
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"strconv"
-	"strings"
-	"unicode"
 
 	"github.com/debobrad579/httpfromtcp/internal/headers"
 )
 
-const bufferSize = 8
+const bufferSize = 1024
+const maxBufferSize = 8 * 1024 * 1024
 
 type requestState int
 
@@ -21,12 +19,6 @@ const (
 	requestParsingBody
 	requestDone
 )
-
-type RequestLine struct {
-	HttpVersion   string
-	RequestTarget string
-	Method        string
-}
 
 type Request struct {
 	RequestLine RequestLine
@@ -40,10 +32,13 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	readToIndex := 0
 
 	request := &Request{state: requestInitialized}
-	request.Headers = make(headers.Headers)
+	request.Headers = *headers.New()
 
 	for request.state != requestDone {
 		if readToIndex >= len(buf) {
+			if len(buf)*2 > maxBufferSize {
+				return nil, errors.New("request too large")
+			}
 			newBuf := make([]byte, len(buf)*2)
 			copy(newBuf, buf)
 			buf = newBuf
@@ -98,7 +93,7 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 			return 0, nil
 		}
 
-		r.RequestLine = requestLine
+		r.RequestLine = *requestLine
 		r.state = requestParsingHeaders
 		return n, nil
 	case requestParsingHeaders:
@@ -129,11 +124,11 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 			return 0, nil
 		}
 
-		r.Body = append(r.Body, data...)
-
-		if len(r.Body) > contentLength {
-			return 0, errors.New("error: body greater than Content-Length")
+		if len(r.Body)+len(data) > contentLength {
+			return 0, errors.New("body greater than Content-Length")
 		}
+
+		r.Body = append(r.Body, data...)
 
 		if len(r.Body) == contentLength {
 			r.state = requestDone
@@ -141,43 +136,8 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 
 		return len(data), nil
 	case requestDone:
-		return 0, errors.New("error: trying to read data in a done state")
+		return 0, errors.New("trying to read data in a done state")
 	default:
-		return 0, errors.New("error: unknown state")
+		return 0, errors.New("unknown state")
 	}
-}
-
-func parseRequestLine(data []byte) (RequestLine, int, error) {
-	i := strings.Index(string(data), "\r\n")
-	if i == -1 {
-		return RequestLine{}, 0, nil
-	}
-
-	requestLine := string(data[:i])
-	consumed := i + 2
-	parts := strings.Split(requestLine, " ")
-
-	if len(parts) != 3 {
-		return RequestLine{}, 0, errors.New("error: invalid number of parts in request line")
-	}
-
-	method := parts[0]
-	for _, letter := range method {
-		if !unicode.IsLetter(letter) || !unicode.IsUpper(letter) {
-			return RequestLine{}, 0, fmt.Errorf("error: incorrect method format: %s", method)
-		}
-	}
-
-	reqTarget := parts[1]
-
-	httpVersion := strings.TrimPrefix(parts[2], "HTTP/")
-	if httpVersion != "1.1" {
-		return RequestLine{}, 0, fmt.Errorf("error: incorrect http version: %s", httpVersion)
-	}
-
-	return RequestLine{
-		HttpVersion:   httpVersion,
-		RequestTarget: reqTarget,
-		Method:        method,
-	}, consumed, nil
 }

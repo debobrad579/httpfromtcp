@@ -1,9 +1,9 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"sync/atomic"
 
 	"github.com/debobrad579/httpfromtcp/internal/request"
@@ -13,7 +13,7 @@ import (
 type Handler func(w *response.Writer, req *request.Request)
 
 type Server struct {
-	Port     int
+	Port     uint16
 	listener net.Listener
 	handler  Handler
 	isClosed atomic.Bool
@@ -31,10 +31,10 @@ func (s *Server) listen() {
 			if s.isClosed.Load() {
 				return
 			}
-			log.Println("Connection failed")
+
+			log.Println(err)
 			continue
 		}
-		log.Println("Connection established")
 
 		go s.handle(conn)
 	}
@@ -42,6 +42,12 @@ func (s *Server) listen() {
 
 func (s *Server) handle(conn net.Conn) {
 	defer conn.Close()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic in handler: %v", r)
+		}
+	}()
+
 	req, err := request.RequestFromReader(conn)
 	if err != nil {
 		log.Println(err)
@@ -52,13 +58,13 @@ func (s *Server) handle(conn net.Conn) {
 	s.handler(resWriter, req)
 }
 
-func Serve(port int, handler Handler) (*Server, error) {
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+func Serve(port uint16, handler Handler) (*Server, error) {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err
 	}
 
-	server := Server{
+	server := &Server{
 		Port:     port,
 		listener: listener,
 		handler:  handler,
@@ -66,5 +72,5 @@ func Serve(port int, handler Handler) (*Server, error) {
 
 	go server.listen()
 
-	return &server, nil
+	return server, nil
 }
