@@ -7,14 +7,11 @@ An implimentation of the HTTP/1.1 protocol written in go, built on raw TCP conne
 ```
 .
 ├── internal/
-│   ├── headers/    # HTTP header parsing
-│   ├── request/    # HTTP request parsing
-│   ├── response/   # HTTP response writing
-│   └── server/     # TCP server and connection handling
-├── calculator-app/ # Scientific calculator web app
+│   ├── http/        # HTTP/1.1 protocol implementation
+├── calculator-app/  # Scientific calculator web app
 └── cmd/
-    ├── httpserver/   # Simple demo HTTP server
-    └── tcplistener/  # Raw TCP request logger
+    ├── httpserver/  # Simple demo HTTP server
+    └── tcplistener/ # Raw TCP request logger
 ```
 
 ## How It Works
